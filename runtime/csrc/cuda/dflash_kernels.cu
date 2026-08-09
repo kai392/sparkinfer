@@ -1062,6 +1062,7 @@ void launch_gemv_batched_q4_fused3(const void* x,
                             else if (ksplit == 4) SI_Q4KS(BW_, 4);                                \
                             else SI_Q4KS(BW_, 8); } while (0)
         if (batch == 4)      SI_Q4KS_B(4);
+        else if (batch == 6) SI_Q4KS_B(6);
         else if (batch == 8) SI_Q4KS_B(8);
         else                 SI_Q4KS_B(16);
 #undef SI_Q4KS_B
@@ -1076,6 +1077,7 @@ void launch_gemv_batched_q4_fused3(const void* x,
         (const unsigned char*)Q2, (const __half2*)D0, (const __half2*)D1, (const __half2*)D2,   \
         (bf16*)y0, (bf16*)y1, (bf16*)y2, N0, N1, N2, K)
     if (batch == 4)      SI_Q4F3(4);
+    else if (batch == 6) SI_Q4F3(6);
     else if (batch == 8) SI_Q4F3(8);
     else                 SI_Q4F3(16);
 #undef SI_Q4F3
@@ -1117,6 +1119,7 @@ void launch_gemv_batched_q8_fused3(const void* x,
         (const bf16*)x, (const signed char*)Q0, (const signed char*)Q1, (const signed char*)Q2,   \
         S0, S1, S2, (bf16*)y0, (bf16*)y1, (bf16*)y2, N0, N1, N2, K)
     if (batch == 4)      SI_Q8F3(4);
+    else if (batch == 6) SI_Q8F3(6);
     else if (batch == 8) SI_Q8F3(8);
     else                 SI_Q8F3(16);
 #undef SI_Q8F3
@@ -1242,6 +1245,7 @@ void launch_gemv_batched16_fused3(const void* x,
         (const bf16*)x, (const bf16*)W0, (const bf16*)W1, (const bf16*)W2,                     \
         (bf16*)y0, (bf16*)y1, (bf16*)y2, N0, N1, N2, K)
     if (batch == 4)       SI_FUSED3(4);
+    else if (batch == 6)  SI_FUSED3(6);
     else if (batch == 8)  SI_FUSED3(8);
     else                  SI_FUSED3(16);
 #undef SI_FUSED3

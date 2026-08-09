@@ -578,16 +578,17 @@ bool DFlashDraftModel::forward_block(const void* target_hidden, int ctx_len,
         if (v < kProposalDepth + 1) v = kProposalDepth + 1;
         // Round up to a width the batched-GEMV path is instantiated for; anything else falls
         // back to the per-token GEMV loop, which costs far more than the rows it saves.
-        const int w = v <= 4 ? 4 : (v <= 8 ? 8 : 16);
+        // Include 6: default kProposalDepth=5 needs width 6, and the previous 6→8 round burned
+        // two unused bidirectional rows on every draft step (projections + attention).
+        const int w = v <= 4 ? 4 : (v <= 6 ? 6 : (v <= 8 ? 8 : 16));
         return w > c.block_size ? c.block_size : w;
     }();
     const float scale = 1.f / sqrtf((float)d);
     const int past = s.seq_len;
-    // The fixed-size (block_size) projections below can use a batched-GEMV kernel that reads
-    // each weight row from DRAM once instead of once per token (see dflash_kernels.cu). It's
-    // compiled for exactly 16 rows, so it's only used when the draft's block_size is 16 (true
-    // for the current checkpoint); any other block_size falls back to the per-token GEMV loop.
-    const bool fast16 = (BW == 16 || BW == 8 || BW == 4);
+    // The fixed-size projections below can use a batched-GEMV kernel that reads each weight
+    // row from DRAM once instead of once per token (see dflash_kernels.cu). Instantiated for
+    // {4,6,8,16}; other widths fall back to the per-token GEMV loop.
+    const bool fast16 = (BW == 16 || BW == 8 || BW == 6 || BW == 4);
 
     cu(cudaMemcpyAsync(s.d_ids, noise_ids, BW * sizeof(int), cudaMemcpyHostToDevice, st), "ids");
     kernels::launch_embedding(s.d_ids, s.embed, s.noise, BW, H, st);
